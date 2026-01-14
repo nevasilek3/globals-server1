@@ -19,16 +19,31 @@ wss.on('connection', (ws) => {
             if (message.type === 'register') {
                 const pcName = message.pcName;
                 const minecraftNick = message.minecraftNick;
+                const clientName = message.clientName || 'Unknown';
+                const clientVersion = message.clientVersion || '1.0';
+                
+                console.log('========================================');
+                console.log('Received register message:');
+                console.log('  Raw message:', JSON.stringify(message));
+                console.log('  PC Name:', pcName);
+                console.log('  Minecraft Nick:', minecraftNick);
+                console.log('  Client Name:', clientName);
+                console.log('  Client Version:', clientVersion);
+                console.log('========================================');
                 
                 currentPcName = pcName;
-                users.set(pcName, { ws, minecraftNick });
+                users.set(pcName, { ws, minecraftNick, clientName, clientVersion });
                 
-                console.log(`User registered: ${pcName} (${minecraftNick})`);
+                console.log(`User registered: ${pcName} (${minecraftNick}) - Client: ${clientName} ${clientVersion}`);
                 
                 // Отправляем список всех пользователей новому клиенту
                 const userList = {};
                 users.forEach((data, pcName) => {
-                    userList[pcName] = data.minecraftNick;
+                    userList[pcName] = {
+                        minecraftNick: data.minecraftNick,
+                        clientName: data.clientName,
+                        clientVersion: data.clientVersion
+                    };
                 });
                 
                 ws.send(JSON.stringify({
@@ -40,7 +55,9 @@ wss.on('connection', (ws) => {
                 broadcast({
                     type: 'user_join',
                     pcName: pcName,
-                    minecraftNick: minecraftNick
+                    minecraftNick: minecraftNick,
+                    clientName: clientName,
+                    clientVersion: clientVersion
                 }, ws);
             }
             else if (message.type === 'snowball_throw') {
